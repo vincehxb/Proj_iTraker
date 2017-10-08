@@ -37,7 +37,7 @@ def drawblock(img_,block,blockcolor=(210,240,50),blockwideth=5):
     cv2.rectangle(img_,(sx,sy),(sx+213,sy+213),blockcolor,blockwideth)
     return img_
 
-def drew_face_eye(img,minNeighbors=7,scaleFactor=1.1,minSize=(30, 30),reduce_pix=7):
+def drew_face_eye(img,minNeighbors=7,scaleFactor=1.3,minSize=(50, 50)):
     '''
     眼睛检测函数，使用opencv内置的API
     :param img:
@@ -72,4 +72,4 @@ def drew_face_eye(img,minNeighbors=7,scaleFactor=1.1,minSize=(30, 30),reduce_pix
 
         cv2.rectangle(roi_color,(ex,ey),(ex+W,ey+H),(0,0,255),2)
 
-    return roi_color[ey+reduce_pix:ey+H-reduce_pix,ex+reduce_pix:ex+W-reduce_pix] if roi_color is not None else None
+    return roi_color[ey-20:ey+H+10,ex-20:ex+W+10] if roi_color is not None else None
