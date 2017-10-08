@@ -1,17 +1,28 @@
 '''
-images={'left_eye':left_eye,
-        'right_eye':right_eye,
-        'face_ori':face_ori
-        'face_grid':face_grid}
+2017年10月8日22:46:03
+    完成：
+        1._buildgraph函数
+        2.conv、maxpool、fc的包装函数
 '''
 import tensorflow as tf
 import numpy as np
 
 class mit_itraker(object):
     def __init__(self,left_eye,right_eye,face_ori,face_grid):
-        pass
+        print('Building graph.....')
+        self._buildgraph(left_eye,right_eye,face_ori,face_grid)
+        print('Building graph done!')
 
     def _buildgraph(self,left_eye,right_eye,face_ori,face_grid):
+
+        '''
+        创建网络结构
+        :param left_eye: 左眼数据
+        :param right_eye: 右眼数据
+        :param face_ori:  脸部数据
+        :param face_grid:  脸部掩码
+        :return: 回归的坐标
+        '''
 
         with tf.variable_scope('CONV_1'):       #   64*64/3 -> 54*54/96 -> 27*27/96
             #  left eyes conv->relu->maxpool
@@ -77,10 +88,31 @@ class mit_itraker(object):
             face_conv4=self.conv_layer(face_pool3,'conv_F4',[1,1,384,64])
             face_pool4=self.maxpool_layer(face_conv4,'face_pool4')
 
+        with tf.variable_scope('FC_Concate'):
+            # concate left and right eyes
+            x_leftEye=tf.reshape(left_pool4,shape=[-1,2*2*64],name='leftEye_flatten') # N*256
+            x_rightEye=tf.reshape(right_pool4,shape=[-1,2*2*64],name='rightEye_flatten') # N*256
+            eyes_concate=tf.concat([x_leftEye,x_rightEye],axis=1,name='eyes_concate') # N*512
+            FC_E1=self.fc_layer(eyes_concate,'FC_E1')# N*128
+
+            # concate face and face_mask
+            x_faceMask=tf.reshape(face_grid,shape=[-1,25*25],name='facemask_flatten') # N*625
+            x_face=tf.reshape(face_pool4,shape=[-1,2*2*64],name='face_flatten') # N*256
+            FC_F1=self.fc_layer(x_face,name='FC_F1',shape=[2*2*64,128]) # N*128
+            FC_FG1=self.fc_layer(x_faceMask,name='FC_FG1',shape=[25*25,256]) # N*256
+            faces_concate=tf.concat([FC_F1,FC_FG1],axis=1,name='faces_concate') # N*384
+
+            # concate faces and eyes
+            face_eye_concate=tf.concat([faces_concate,FC_E1],axis=1,name='face_eye_concate') # N*512
+            FC_1=self.fc_layer(face_eye_concate,'FC_1',[512,128]) # N*128
+            FC_1=tf.nn.relu(FC_1,'fc1_relu')
+            FC_2=self.fc_layer(FC_1,'FC_2',[128,2]) # N*2
+        self.coordinate=FC_2
+
 
     def conv_layer(self,x,name,shape):
         '''
-        卷积层函数
+        卷积层函数，默认无 padding,初始化为  xavier
         :param x:输入X
         :param name: 卷积层名称
         :return: 卷积+relu后的结果
@@ -90,9 +122,10 @@ class mit_itraker(object):
             b=tf.get_variable('biases',shape=shape[-1:],initializer=tf.constant(0.1,shape=shape[-1:]))
             conv_=tf.nn.conv2d(x,w,[1,1,1,1],'VALID')
             return tf.nn.relu(conv_)
+
     def maxpool_layer(self,x,name):
         '''
-        池化函数
+        池化函数，默认 K=2，S=2，也就是输入【H,W】,输出 【H/2,W/2】
         :param x:输入
         :param name: 层名字
         :return: 池化后的结果
@@ -107,6 +140,6 @@ class mit_itraker(object):
         :return:  X*W+B 没有relu
         '''
         with tf.variable_scope(name):
-            w=tf.get_variable('weight',shape=shape)
-            b=tf.get_variable('biases',shape=shape[-1:])
+            w=tf.get_variable('weight',shape=shape,initializer=tf.contrib.layers.xavier_initializer())
+            b=tf.get_variable('biases',shape=shape[-1:],initializer=tf.constant(0.1,shape=shape[-1:]))
             return tf.matmul(x,w)+b
