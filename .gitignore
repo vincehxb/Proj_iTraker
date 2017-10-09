@@ -2,3 +2,14 @@
 *.xml
 *.iml
 *.pyc
+*.ipynb
+*.ipynb
+MIT_iTraker/model_save/checkpoint
+MIT_iTraker/model_save/model.ckpt-23400.data-00000-of-00001
+MIT_iTraker/model_save/model.ckpt-23400.index
+MIT_iTraker/model_save/model.ckpt-23400.meta
+MIT_iTraker/mylog/val/events.out.tfevents.1507520896.PC-201706071825
+MIT_iTraker/mylog/test/events.out.tfevents.1507520892.PC-201706071825
+*.bat
+*.ipynb
+MIT_iTraker/.ipynb_checkpoints/mit_数据探索-checkpoint.ipynb
