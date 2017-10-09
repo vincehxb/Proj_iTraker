@@ -6,14 +6,59 @@
 '''
 import tensorflow as tf
 import numpy as np
-
+import os
 class mit_itraker(object):
-    def __init__(self,left_eye,right_eye,face_ori,face_grid):
-        print('Building graph.....')
-        self._buildgraph(left_eye,right_eye,face_ori,face_grid)
-        print('Building graph done!')
+    def __init__(self,fileroot_addr):
 
-    def _buildgraph(self,left_eye,right_eye,face_ori,face_grid):
+        #self._defPlaceholder()
+        self._buildgraph()
+        self._loadnpz(fileroot_addr)
+
+
+    def _defPlaceholder(self):
+        '''
+        定义占位符
+        :return:
+        '''
+        with tf.name_scope('PlaceHolder'):
+            self.LeftEye=tf.placeholder(tf.float32,[None,64,64,3],name='LeftEye')
+            self.RightEye=tf.placeholder(tf.float32,[None,64,64,3],'RightEye')
+            self.FaceOri=tf.placeholder(tf.float32,[None,64,64,3],'FaceOri')
+            self.FaceMask=tf.placeholder(tf.float32,[None,25,25],'FaceMask')
+            self.Y=tf.placeholder(tf.float32,[None,2],name='Y')
+            self.LR=tf.placeholder(tf.float32,name='Learning_rate')
+        print('Define PlaceHolder Done~')
+
+    def _defTrainernLoss(self):
+        self.LOSS=tf.nn.softmax_cross_entropy_with_logits()
+
+    def _loadnpz(self,file_addr):
+        '''
+        * 加载图片文件，将所有加载的图，坐标放入 data字典中
+        * 同时对数据进行 normalize使得均值为 0，值域为 1
+        :param file_addr: 文件夹地址
+        :return: 装有所有图片以及坐标的字典data
+        '''
+        self.data={}
+        for i in ['train_eye_left.npy',
+                  'train_eye_right.npy',
+                  'train_face.npy',
+                  'train_face_mask.npy',
+                  'train_y.npy',
+                  'val_eye_left.npy',
+                  'val_eye_right.npy',
+                  'val_face.npy',
+                  'val_face_mask.npy',
+                  'val_y.npy']:
+            d_=np.load(os.path.join(file_addr,i))
+            d_=d_.reshape(d_.shape[0],-1).astype('float32')
+            #使得所有值小于 1
+            d_/=255.0
+            #使得均值为0
+            d_-=np.mean(d_,axis=0)
+        print('Load Data Done~')
+
+    def _buildgraph(self):
 
         '''
         创建网络结构
@@ -23,6 +68,8 @@ class mit_itraker(object):
         :param face_grid:  脸部掩码
         :return: 回归的坐标
         '''
+
+        left_eye,right_eye,face_ori,face_grid=self.LeftEye,self.RightEye,self.FaceOri,self.FaceMask
 
         with tf.variable_scope('CONV_1'):       #   64*64/3 -> 54*54/96 -> 27*27/96
             #  left eyes conv->relu->maxpool
@@ -108,7 +155,7 @@ class mit_itraker(object):
             FC_1=tf.nn.relu(FC_1,'fc1_relu')
             FC_2=self.fc_layer(FC_1,'FC_2',[128,2]) # N*2
         self.coordinate=FC_2
-
+        print('Building graph done!')
 
     def conv_layer(self,x,name,shape):
         '''
