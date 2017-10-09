@@ -11,5 +11,4 @@ MIT_iTraker/model_save/model.ckpt-23400.meta
 MIT_iTraker/mylog/val/events.out.tfevents.1507520896.PC-201706071825
 MIT_iTraker/mylog/test/events.out.tfevents.1507520892.PC-201706071825
 *.bat
-*.ipynb
-MIT_iTraker/.ipynb_checkpoints/mit_数据探索-checkpoint.ipynb
+MIT_iTraker/.ipynb_checkpoints/*
