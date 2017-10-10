@@ -45,6 +45,7 @@ class mit_itraker(object):
         :return: 装有所有图片以及坐标的字典data
         '''
         self.data={}
+        mean_dict={}
         for i in ['train_eye_left.npy',
                   'train_eye_right.npy',
                   'train_face.npy',
@@ -58,11 +59,15 @@ class mit_itraker(object):
             d_=np.load(os.path.join(file_addr,i))
             ori_shape=d_.shape
             d_=d_.reshape(ori_shape[0],-1).astype('float32')
-            #使得所有值小于 1
-            d_/=255.0
-            #使得均值为0
-            d_-=np.mean(d_,axis=0)
+            if i[-5]!='y':
+                #使得所有值小于 1
+                d_/=255.0
+                #使得均值为0
+                mean_=np.mean(d_,axis=0)
+                d_-=mean_
+                mean_dict[i[:-4]]=mean_
             self.data[i[:-4]]=d_.reshape(ori_shape)
+        self.mean_dict=mean_dict
         print('Load Data Done~')
 
     def _buildgraph(self,left_eye,right_eye,face_ori,face_grid):
