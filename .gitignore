@@ -4,7 +4,6 @@
 MIT_iTraker/model_save/*
 *.bat
 MIT_iTraker/.ipynb_checkpoints/*
+MIT_iTraker/mylog/*
 
 .ipynb_checkpoints/cumt_itraker-checkpoint.ipynb
-MIT_iTraker/mylog/test/events.out.tfevents.1507627068.PC-201706071825
-MIT_iTraker/mylog/val/events.out.tfevents.1507627181.PC-201706071825
