@@ -7,3 +7,10 @@ MIT_iTraker/.ipynb_checkpoints/*
 MIT_iTraker/mylog/*
 
 .ipynb_checkpoints/cumt_itraker-checkpoint.ipynb
+CUMT_iTraker/.ipynb_checkpoints/*
+*.pkl
+*.flv
+*.jpg
+CUMT_iTraker/model_save/*
+CUMT_iTraker/mylog/*
+*.mp4

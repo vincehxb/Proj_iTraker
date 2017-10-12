@@ -70,6 +70,6 @@ def drew_face_eye(img,minNeighbors=7,scaleFactor=1.3,minSize=(50, 50)):
             ey=eyes[0][1]
             H=eyes[1][1]-eyes[0][1]+eyes[1][3]
 
-        cv2.rectangle(roi_color,(ex,ey),(ex+W,ey+H),(0,0,255),2)
+        #cv2.rectangle(roi_color,(ex,ey),(ex+W,ey+H),(0,0,255),2)
 
-    return roi_color[ey-20:ey+H+10,ex-20:ex+W+10] if roi_color is not None else None
+    return roi_color[ey-5:ey+H+5,ex-5:ex+W+5] if roi_color is not None else None
