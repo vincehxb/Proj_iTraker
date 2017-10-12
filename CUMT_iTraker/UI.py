@@ -1,5 +1,8 @@
 '''
-默认视频格式为 640*640，使用其他大小的视频需要对程序进行更改
+问题：
+    默认视频格式为 640*640，使用其他大小的视频需要对程序进行更改
+ 已修正：
+    支持任意分辨率视频
 '''
 import cv2
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
@@ -12,10 +15,15 @@ def drawline(img_,line_w=3,line_color=(255,255,255)):
     :param line_color: 线的颜色
     :return:
     '''
-    cv2.line(img_,(213,0),(213,640),line_color,line_w)
-    cv2.line(img_,(426,0),(426,640),line_color,line_w)
-    cv2.line(img_,(0,213),(640,213),line_color,line_w)
-    cv2.line(img_,(0,426),(640,426),line_color,line_w)
+    h,w=img_.shape[1],img_.shape[0]
+    h_,w_=h//3,w//3
+    # 两横
+    cv2.line(img_,(h_,0),(h_,w),line_color,line_w)
+    cv2.line(img_,(2*h_,0),(2*h_,w),line_color,line_w)
+    # 两竖
+    cv2.line(img_,(0,w_),(h,w_),line_color,line_w)
+    cv2.line(img_,(0,2*w_),(h,2*w_),line_color,line_w)
+
     return img_
 
 def drawblock(img_,block,blockcolor=(210,240,50),blockwideth=5):
@@ -27,14 +35,16 @@ def drawblock(img_,block,blockcolor=(210,240,50),blockwideth=5):
     :param blockwideth: 框的宽度
     :return:
     '''
+    h,w=img_.shape[1],img_.shape[0]
+    h_,w_=h//3,w//3
+    counter=1
     block_map={
-        1:(0,0),2:(0,213),3:(0,426),
-        4:(213,0),5:(213,213),6:(213,426),
-        7:(426,0),8:(426,213),9:(426,426),
+        1:(0,0),2:(0,w_),3:(0,2*w_),
+        4:(h_,0),5:(h_,w_),6:(h_,2*w_),
+        7:(2*h_,0),8:(2*h_,w_),9:(2*h_,2*w_),
     }
     sy,sx=block_map[block]
-
-    cv2.rectangle(img_,(sx,sy),(sx+213,sy+213),blockcolor,blockwideth)
+    cv2.rectangle(img_,(sy,sx),(sy+h_,sx+w_),blockcolor,blockwideth)
     return img_
 
 def drew_face_eye(img,minNeighbors=7,scaleFactor=1.3,minSize=(50, 50)):
