@@ -15,14 +15,14 @@ def drawline(img_,line_w=3,line_color=(255,255,255)):
     :param line_color: 线的颜色
     :return:
     '''
-    h,w=img_.shape[1],img_.shape[0]
+    h,w=img_.shape[0],img_.shape[1]
     h_,w_=h//3,w//3
+    # 两竖 (w,h)
+    cv2.line(img_,(w_,0),(w_,h),line_color,line_w)
+    cv2.line(img_,(2*w_,0),(2*w_,h),line_color,line_w)
     # 两横
-    cv2.line(img_,(h_,0),(h_,w),line_color,line_w)
-    cv2.line(img_,(2*h_,0),(2*h_,w),line_color,line_w)
-    # 两竖
-    cv2.line(img_,(0,w_),(h,w_),line_color,line_w)
-    cv2.line(img_,(0,2*w_),(h,2*w_),line_color,line_w)
+    cv2.line(img_,(0,h_),(w,h_),line_color,line_w)
+    cv2.line(img_,(0,2*h_),(h,2*h_),line_color,line_w)
 
     return img_
 
@@ -35,7 +35,7 @@ def drawblock(img_,block,blockcolor=(210,240,50),blockwideth=5):
     :param blockwideth: 框的宽度
     :return:
     '''
-    h,w=img_.shape[1],img_.shape[0]
+    h,w=img_.shape[0],img_.shape[1]
     h_,w_=h//3,w//3
     counter=1
     block_map={
@@ -44,10 +44,10 @@ def drawblock(img_,block,blockcolor=(210,240,50),blockwideth=5):
         7:(2*h_,0),8:(2*h_,w_),9:(2*h_,2*w_),
     }
     sy,sx=block_map[block]
-    cv2.rectangle(img_,(sy,sx),(sy+h_,sx+w_),blockcolor,blockwideth)
+    cv2.rectangle(img_,(sx,sy),(sx+w_,sy+h_),blockcolor,blockwideth)
     return img_
 
-def drew_face_eye(img,minNeighbors=7,scaleFactor=1.3,minSize=(50, 50)):
+def drew_face_eye(img,minNeighbors=7,scaleFactor=1.3,minSize=(50, 50),show_reg=False):
     '''
     眼睛检测函数，使用opencv内置的API
     :param img:
@@ -79,7 +79,7 @@ def drew_face_eye(img,minNeighbors=7,scaleFactor=1.3,minSize=(50, 50)):
         else:
             ey=eyes[0][1]
             H=eyes[1][1]-eyes[0][1]+eyes[1][3]
-
-        #cv2.rectangle(roi_color,(ex,ey),(ex+W,ey+H),(0,0,255),2)
+        if show_reg:
+            cv2.rectangle(roi_color,(ex,ey),(ex+W,ey+H),(0,0,255),2)
 
     return roi_color[ey-5:ey+H+5,ex-5:ex+W+5] if roi_color is not None else None
