@@ -91,7 +91,7 @@ class Cal_Interface(object):
         img[sy:sy+h_,sx:sx+w_,:]=blockcolor
         #在矩形中心画一个小圆辅助
         roi_=img[sy:sy+h_,sx:sx+w_]
-        cv2.circle(roi_,(roi_.shape[1]//2,roi_.shape[0]//2), 10, (0,0,0), -1)
+        cv2.circle(roi_,(roi_.shape[1]//2,roi_.shape[0]//2), 10, (130,230,220), -1)
 
         #只是在矩形边缘画框
         #cv2.rectangle(img_,(sx,sy),(sx+w_,sy+h_),blockcolor,blockwideth)
