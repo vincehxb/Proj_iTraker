@@ -16,7 +16,10 @@
 ## MIT_iTraker
 * _mit_eye.py_        
 	>mit模型的类文件
-  
+	
+* _interface.py_
+	>校准的界面函数
+	
 * _mit_eye_v2.py_
 	>没有facemask作为输入的版本
 
