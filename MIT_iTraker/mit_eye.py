@@ -1,20 +1,20 @@
 '''
-2017年10月8日22:46:03
+2017年10月17日10:25:40
     完成：
-        1._buildgraph函数
-        2.conv、maxpool、fc的包装函数
-
-2017年10月9日14:56:51
-    完成：
-        1.不在类内定义占位符
-        2.在类内加载数据，并对数据进行normalize
-
+        1.facemask的计算函数
 2017年10月10日20:37:49
     完成：
         1.在fc层加入 dropout
         2.加入BatchNormalize层
         3.loss里面加入W的惩罚项
-
+2017年10月9日14:56:51
+    完成：
+        1.不在类内定义占位符
+        2.在类内加载数据，并对数据进行normalize
+2017年10月8日22:46:03
+    完成：
+        1._buildgraph函数
+        2.conv、maxpool、fc的包装函数
 
 '''
 import tensorflow as tf
@@ -210,3 +210,24 @@ class mit_itraker(object):
             if not output_flag:
                 fc_op=tf.layers.batch_normalization(fc_op,training=bn_flag)
             return fc_op
+
+def GetFaceGrid(face_pra,ori_imgpra):
+    '''
+    给定参数，计算出对于的FaceMask
+    :param face_pra: 脸参数 （x,y,w,h)
+    :param ori_imgpra: 尺寸参数 (img_w,img_h,grid_w,grid_h)
+    :return: FaceMaks矩阵
+
+    '''
+    #尺寸参数
+    img_w,img_h,grid_w,grid_h=ori_imgpra
+    #比例因子
+    sacle_w=grid_w/img_w
+    sacle_h=grid_h/img_h
+    #等比例转换
+    x_i,y_i,h_i,w_i=face_pra
+    x_o,y_o,h_o,w_o=int(x_i*sacle_w)+1,int(y_i*sacle_h)+1,int(h_i*sacle_h),int(w_i*sacle_w)
+    #得到facemask
+    face_graid=np.zeros([grid_h,grid_w],'uint8')
+    face_graid[y_o:y_o+h_o,x_o:x_o+w_o]=1
+    return face_graid
