@@ -25,13 +25,19 @@ import tensorflow as tf
 import numpy as np
 import os
 class mit_itraker(object):
-    def __init__(self,fileroot_addr,left_eye,right_eye,face_ori,dropout,bn_train,reg_rate):
+    def __init__(self,fileroot_addr,left_eye,right_eye,face_ori,dropout,bn_train,reg_rate,load_trainimg=True,
+                 output_class=16):
 
         self.regularizer=tf.contrib.layers.l2_regularizer(reg_rate)
 
+        self.output_class=output_class
+        self.dropout=dropout
+        self.bn_train=bn_train
+
         self._buildgraph(left_eye,right_eye,face_ori,dropout,bn_train)
-        print('Loading file~')
-        self._loadnpz(fileroot_addr)
+        if load_trainimg:
+            print('Loading file~')
+            self._loadnpz(fileroot_addr)
 
     def _loadnpz(self,file_addr):
         '''
@@ -66,6 +72,39 @@ class mit_itraker(object):
         self.mean_dict=mean_dict
         print('Load Data Done~')
 
+    def reset_fclayer(self,sess,init_newclasslayer=False):
+        '''
+        重置最后两层 FC1，FC2的权值，适应新的数据集
+        :return:
+        '''
+        with tf.variable_scope('FC_Concate'):
+            with tf.variable_scope('FC_1',reuse=True):
+                w=tf.get_variable('weight',shape=(256, 128))
+                b=tf.get_variable('biases',shape=(128,))
+                wfc1=tf.truncated_normal([256,128],stddev=0.01)
+                bfc1=tf.zeros([128,])
+                sess.run(w.assign(wfc1))
+                sess.run(b.assign(bfc1))
+        with tf.variable_scope('FC_Concate'):
+            with tf.variable_scope('FC_2',reuse=True):
+                w=tf.get_variable('weight',shape=(128, 2))
+                b=tf.get_variable('biases',shape=(2,))
+                wfc2=tf.truncated_normal([128,2],stddev=0.01)
+                bfc2=tf.zeros([2,])
+                sess.run(w.assign(wfc2))
+                sess.run(b.assign(bfc2))
+        print('Reset FC1,FC2 weight/biases done!')
+        if init_newclasslayer:
+            with tf.variable_scope('FC_2_CLASS',reuse=True):
+                w=tf.get_variable('FC_2/weight',shape=[128,self.output_class])
+                b=tf.get_variable('FC_2/biases',shape=[self.output_class,])
+                wfc3=tf.truncated_normal([128,self.output_class],stddev=0.01)
+                bfc3=tf.zeros([self.output_class,])
+                sess.run(w.assign(wfc3))
+                sess.run(b.assign(bfc3))
+            print('Init FC_2_CLASS weight/biases done!')
+
+
     def _buildgraph(self,left_eye,right_eye,face_ori,dropout_rate,bn_train):
 
         '''
@@ -78,7 +117,7 @@ class mit_itraker(object):
         :return: 回归的坐标
 
         '''
-
+        output_class=self.output_class
         #left_eye,right_eye,face_ori,face_grid=self.LeftEye,self.RightEye,self.FaceOri,self.FaceMask
 
         with tf.variable_scope('CONV_1'):       #   64*64/3 -> 54*54/96 -> 27*27/96
@@ -164,8 +203,19 @@ class mit_itraker(object):
             FC_1=self.fc_layer(face_eye_concate,'FC_1',[256,128],dp=dropout_rate,bn_flag=bn_train) # N*128
             FC_1=tf.nn.relu(FC_1,'fc1_relu')
             FC_2=self.fc_layer(FC_1,'FC_2',[128,2],dp=dropout_rate,bn_flag=bn_train,output_flag=True) # N*2
+            # 转换成分类问题
+            #FC2_CLASS=self.fc_layer(FC_1,'FC2_CLASS',[128,output_class],dp=dropout_rate,bn_flag=bn_train,output_flag=True)
         self.coordinate=FC_2
+        self.FC_1=FC_1
         print('Building graph done!')
+
+    def calculate_class(self):
+        with tf.variable_scope('FC_2_CLASS'):
+            FC_1=self.FC_1
+            dropout_rate=self.dropout
+            bn_train=self.bn_train
+            FC_2=self.fc_layer(FC_1,'FC_2',[128,self.output_class],dp=dropout_rate,bn_flag=bn_train,output_flag=True)
+        self.class_op=FC_2
 
     def conv_layer(self,x,name,shape,bn_flag,reuse_=None):
         '''

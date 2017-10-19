@@ -8,8 +8,9 @@
     2017年10月16日：
         完成：
             1.每隔 1s 标识出一个矩形框
-        TODO：
-            在摄像头中捕获用户的图像，并且保存
+
+            2.在摄像头中捕获用户的图像，并且保存
+
 '''
 import cv2
 import numpy as np
@@ -18,7 +19,7 @@ import os
 
 class Cal_Interface(object):
     def __init__(self,sre_resolution=(1080,1920,3),cal_time=None,wait_sec=1000,
-                 time_gap=20,frame_num=3,
+                 time_gap=20,frame_num=3,save_filename='calimg_file',
                  line_num=10,line_width=1,line_color=(255,255,255)
                  ,blockcolor=(250,180,222),blockwideth=5):
         '''
@@ -37,6 +38,8 @@ class Cal_Interface(object):
 
         #默认分辨率为 （1080,1920）
         self.img_res=sre_resolution
+        #保存文件夹位置
+        self.save_filename=save_filename
         #校正点的个数
         if cal_time is None:
             self.caltime=line_num*line_num
@@ -46,6 +49,8 @@ class Cal_Interface(object):
         self.wait_sec=wait_sec
         #每一帧图片之间的时间间隔
         self.time_gap=time_gap
+        #每个点捕捉的图像帧数
+        self.framenum=frame_num
         #保存画线的参数
         self.line_num=line_num  #线的数量
         self.line_width=line_width  #线宽
@@ -94,7 +99,7 @@ class Cal_Interface(object):
             cv2.line(img_,(0,h_*i),(w,h_*i),line_color,line_w)
 
 
-    def drawblock(self,img,block_id=(3,3),blockcolor=(210,240,50),blockwideth=5):
+    def drawblock(self,img,block_id=0,blockcolor=(0,0,0),blockwideth=5):
         '''
         选定九宫格，在这个格子上填充矩形表示选定这个格子
         :param img_: 图片
@@ -106,31 +111,67 @@ class Cal_Interface(object):
         h,w=img.shape[0],img.shape[1]
         w_line,h_line=self.line_num,self.line_num
         h_,w_=h//h_line,w//w_line
-        sx,sy=block_id[0]*w_,block_id[1]*h_
+        cor_h=block_id//self.line_num
+        cor_w=block_id%self.line_num
+        sx,sy=cor_w*w_,cor_h*h_
 
         #将整个矩形填充为其他颜色
         img[sy:sy+h_,sx:sx+w_,:]=blockcolor
         #在矩形中心画一个小圆辅助
-        roi_=img[sy:sy+h_,sx:sx+w_]
-        cv2.circle(roi_,(roi_.shape[1]//2,roi_.shape[0]//2), 10, (130,230,220), -1)
+        # roi_=img[sy:sy+h_,sx:sx+w_]
+        # cv2.circle(roi_,(roi_.shape[1]//2,roi_.shape[0]//2), 10, (130,230,220), -1)
 
         #只是在矩形边缘画框
         #cv2.rectangle(img_,(sx,sy),(sx+w_,sy+h_),blockcolor,blockwideth)
         return img
 
+    # def cal(self,cal_times,wait_sec=1000):
+    #     '''
+    #     校准函数，随机显示若干个方格，捕获用户的图片，保存下来
+    #     按 Esc 退出
+    #     :param cal_times: 显示的方格个数
+    #     :param wait_sec: 每个方格出现的时间间隙
+    #     :return:
+    #     '''
+    #
+    #     #创建随机坐标
+    #     x_index=np.random.choice(range(self.line_num),cal_times)
+    #     y_index=np.random.choice(range(self.line_num),cal_times)
+    #     index=zip(list(x_index),list(y_index))
+    #
+    #     #设置window 为全屏
+    #     cv2.namedWindow('Calibrate',cv2.WINDOW_NORMAL)
+    #     cv2.setWindowProperty('Calibrate', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    #
+    #     #随机显示某个位置的方格，设置1 s后保存得到的图像
+    #
+    #     for index_ in index:
+    #         img_=np.ones(self.img_res,np.uint8)*128
+    #         self.drawline(img_=img_,wandh_num=self.line_num,line_color=(255,255,255))
+    #         self.drawblock(img=img_,block_id=index_,blockcolor=self.blockcolor)
+    #         cv2.imshow('Calibrate',img_)
+    #         #等待 1s 后保存图像
+    #         if (cv2.waitKey(wait_sec) & 0xff==27):
+    #             print('Exit Calibrate!')
+    #             break
+    #         #保存用户图像
+    #         self.GetUserImage(savefile='calimg_file',label=index_)
+    #     cv2.destroyWindow('Calibrate')
+    #     print('Get Calibrate Image Done!')
     def cal(self,cal_times,wait_sec=1000):
         '''
         校准函数，随机显示若干个方格，捕获用户的图片，保存下来
         按 Esc 退出
+        修改lable 为block id，也就是改预测模型为分类而不是回归
+        不要设置 cal_times 参数
         :param cal_times: 显示的方格个数
         :param wait_sec: 每个方格出现的时间间隙
         :return:
         '''
 
-        #创建随机坐标
-        x_index=np.random.choice(range(self.line_num),cal_times)
-        y_index=np.random.choice(range(self.line_num),cal_times)
-        index=zip(list(x_index),list(y_index))
+        #创建乱序的block id
+        block_index=np.arange(self.line_num*self.line_num)
+        np.random.shuffle(block_index)
 
         #设置window 为全屏
         cv2.namedWindow('Calibrate',cv2.WINDOW_NORMAL)
@@ -138,7 +179,7 @@ class Cal_Interface(object):
 
         #随机显示某个位置的方格，设置1 s后保存得到的图像
 
-        for index_ in index:
+        for index_ in block_index:
             img_=np.ones(self.img_res,np.uint8)*128
             self.drawline(img_=img_,wandh_num=self.line_num,line_color=(255,255,255))
             self.drawblock(img=img_,block_id=index_,blockcolor=self.blockcolor)
@@ -148,7 +189,7 @@ class Cal_Interface(object):
                 print('Exit Calibrate!')
                 break
             #保存用户图像
-            self.GetUserImage(savefile='calimg_file',label=index_)
+            self.GetUserImage(savefile=self.save_filename,label=index_)
         cv2.destroyWindow('Calibrate')
         print('Get Calibrate Image Done!')
 
@@ -174,9 +215,10 @@ class Cal_Interface(object):
             ret,fram=cap.read()
             if ret:
                 f_counter+=1
-                #cv2.imshow('asd',fram)
                 time_stamp=str(int(time.time()*1e7))
-                img_name=time_stamp+'_'+str(f_counter)+'_'+'x'+str(label[0])+'_y'+str(label[1])+'.jpg'
+                #img_name=time_stamp+'_'+str(f_counter)+'_'+'x'+str(label[0])+'_y'+str(label[1])+'.jpg'
+                #block id
+                img_name=time_stamp+'_'+'blockid_'+str(label)+'.jpg'
                 cv2.imwrite(os.path.join(savefile,img_name),fram)
                 cv2.waitKey(time_gap)
             #30秒 超时退出
@@ -231,6 +273,7 @@ class Cal_Interface(object):
                 xe,ye,we,he=e
                 cv2.rectangle(roi_color,(xe,ye),(xe+we,ye+he),(0,0,255),2)
         return  img
+
     def getoutclean(self):
         '''
         在结束标定的时候进行清理
@@ -249,5 +292,5 @@ class Cal_Interface(object):
 
 if __name__ == '__main__':
 
-    a=Cal_Interface(line_num=4)
+    a=Cal_Interface(line_num=4,save_filename='calimg_file_num')
     a.starcalibrate()

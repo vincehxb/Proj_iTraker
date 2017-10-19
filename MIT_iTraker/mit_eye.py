@@ -21,13 +21,15 @@ import tensorflow as tf
 import numpy as np
 import os
 class mit_itraker(object):
-    def __init__(self,fileroot_addr,left_eye,right_eye,face_ori,face_grid,dropout,bn_train,reg_rate):
+    def __init__(self,fileroot_addr,left_eye,right_eye,face_ori,face_grid,dropout,bn_train,reg_rate,
+                 load_trainimg=True):
 
         self.regularizer=tf.contrib.layers.l2_regularizer(reg_rate)
 
         self._buildgraph(left_eye,right_eye,face_ori,face_grid,dropout,bn_train)
-        print('Loading file~')
-        self._loadnpz(fileroot_addr)
+        if load_trainimg:
+            print('Loading file~')
+            self._loadnpz(fileroot_addr)
 
     def _loadnpz(self,file_addr):
         '''
@@ -61,6 +63,7 @@ class mit_itraker(object):
             self.data[i[:-4]]=d_.reshape(ori_shape)
         self.mean_dict=mean_dict
         print('Load Data Done~')
+
 
     def _buildgraph(self,left_eye,right_eye,face_ori,face_grid,dropout_rate,bn_train):
 
