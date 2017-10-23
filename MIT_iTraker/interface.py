@@ -99,7 +99,7 @@ class Cal_Interface(object):
             cv2.line(img_,(0,h_*i),(w,h_*i),line_color,line_w)
 
 
-    def drawblock(self,img,block_id=0,blockcolor=(0,0,0),blockwideth=5):
+    def drawblock(self,img,block_id=0,blockcolor=(0,218,0),blockwideth=5):
         '''
         选定九宫格，在这个格子上填充矩形表示选定这个格子
         :param img_: 图片
@@ -108,6 +108,7 @@ class Cal_Interface(object):
         :param blockwideth: 框的宽度
         :return:
         '''
+        blockcolor=(218,218,218)
         h,w=img.shape[0],img.shape[1]
         w_line,h_line=self.line_num,self.line_num
         h_,w_=h//h_line,w//w_line
@@ -118,8 +119,8 @@ class Cal_Interface(object):
         #将整个矩形填充为其他颜色
         img[sy:sy+h_,sx:sx+w_,:]=blockcolor
         #在矩形中心画一个小圆辅助
-        # roi_=img[sy:sy+h_,sx:sx+w_]
-        # cv2.circle(roi_,(roi_.shape[1]//2,roi_.shape[0]//2), 10, (130,230,220), -1)
+        roi_=img[sy:sy+h_,sx:sx+w_]
+        cv2.circle(roi_,(roi_.shape[1]//2,roi_.shape[0]//2), 50, (0,0,0), -1)
 
         #只是在矩形边缘画框
         #cv2.rectangle(img_,(sx,sy),(sx+w_,sy+h_),blockcolor,blockwideth)
@@ -163,7 +164,7 @@ class Cal_Interface(object):
         校准函数，随机显示若干个方格，捕获用户的图片，保存下来
         按 Esc 退出
         修改lable 为block id，也就是改预测模型为分类而不是回归
-        不要设置 cal_times 参数
+        不要设置 cal_times 参数，不能起作用
         :param cal_times: 显示的方格个数
         :param wait_sec: 每个方格出现的时间间隙
         :return:
@@ -180,7 +181,8 @@ class Cal_Interface(object):
         #随机显示某个位置的方格，设置1 s后保存得到的图像
 
         for index_ in block_index:
-            img_=np.ones(self.img_res,np.uint8)*128
+            # img_=np.ones(self.img_res,np.uint8)*128
+            img_=cv2.imread('test.jpg')
             self.drawline(img_=img_,wandh_num=self.line_num,line_color=(255,255,255))
             self.drawblock(img=img_,block_id=index_,blockcolor=self.blockcolor)
             cv2.imshow('Calibrate',img_)
@@ -228,7 +230,14 @@ class Cal_Interface(object):
             if (f_counter>frame_num):
                 #print('get user picture ok!')
                 break
+
     def cameracheck(self):
+        '''
+        标定程序运行时的视角检查，会显示用户图像并且标记出眼睛、脸
+        用来检查当前相机姿态，用户姿态是否合适
+        按 ESC 退出或者是 1分钟后超时退出
+        :return: 
+        '''
         face_cascade = cv2.CascadeClassifier(r'D:\Proj_DL\Code\Proj_EyeTraker\haarcascade_frontalface_default.xml')
         eye_cascade = cv2.CascadeClassifier(r'D:\Proj_DL\Code\Proj_EyeTraker\haarcascade_eye.xml')
         self.face_cascade=face_cascade
@@ -267,7 +276,7 @@ class Cal_Interface(object):
             roi_gray = gray[y:y+h, x:x+w]
             roi_color = img[y:y+h, x:x+w]
             #检测视频中脸部的眼睛，并用vector保存眼睛的坐标、大小（用矩形表示）
-            eyes = eye_cascade.detectMultiScale(roi_gray,scaleFactor=1.3, minNeighbors=7, minSize=(50, 50),
+            eyes = eye_cascade.detectMultiScale(roi_gray,scaleFactor=1.1, minNeighbors=5, minSize=(27, 27),
                                                 flags=cv2.CASCADE_SCALE_IMAGE)
             for e in eyes:
                 xe,ye,we,he=e
@@ -292,5 +301,5 @@ class Cal_Interface(object):
 
 if __name__ == '__main__':
 
-    a=Cal_Interface(line_num=4,save_filename='calimg_file_num')
+    a=Cal_Interface(line_num=4,save_filename='calimg_file_num',wait_sec=700,frame_num=5)
     a.starcalibrate()
