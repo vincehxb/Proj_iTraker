@@ -2,10 +2,15 @@
 *.iml
 *.pyc
 MIT_iTraker/model_save/*
+Transfer_iTraker/model_save/*
 *.bat
 MIT_iTraker/.ipynb_checkpoints/*
+MIT_iTraker/filenpy/*
+Transfer_iTraker/.ipynb_checkpoints/*
 MIT_iTraker/mylog/*
-
+Transfer_iTraker/mylog/*
+Transfer_iTraker/Feature_File/*
+Transfer_iTraker/inceptionv3_model/*
 .ipynb_checkpoints/cumt_itraker-checkpoint.ipynb
 CUMT_iTraker/.ipynb_checkpoints/*
 *.pkl
