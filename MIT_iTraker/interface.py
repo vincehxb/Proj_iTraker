@@ -39,6 +39,9 @@ class Cal_Interface(object):
         #默认分辨率为 （1080,1920）
         self.img_res=sre_resolution
         #保存文件夹位置
+        if not os.path.exists(save_filename):
+            os.mkdir(save_filename)
+            print('Create image file:{}'.format(save_filename))
         self.save_filename=save_filename
         #校正点的个数
         if cal_time is None:
@@ -50,7 +53,7 @@ class Cal_Interface(object):
         #每一帧图片之间的时间间隔
         self.time_gap=time_gap
         #每个点捕捉的图像帧数
-        self.framenum=frame_num
+        self.framenum=frame_num-1
         #保存画线的参数
         self.line_num=line_num  #线的数量
         self.line_width=line_width  #线宽
@@ -181,7 +184,7 @@ class Cal_Interface(object):
         #随机显示某个位置的方格，设置1 s后保存得到的图像
 
         for index_ in block_index:
-            # img_=np.ones(self.img_res,np.uint8)*128
+
             img_=cv2.imread('test.jpg')
             self.drawline(img_=img_,wandh_num=self.line_num,line_color=(255,255,255))
             self.drawblock(img=img_,block_id=index_,blockcolor=self.blockcolor)
@@ -218,7 +221,6 @@ class Cal_Interface(object):
             if ret:
                 f_counter+=1
                 time_stamp=str(int(time.time()*1e7))
-                #img_name=time_stamp+'_'+str(f_counter)+'_'+'x'+str(label[0])+'_y'+str(label[1])+'.jpg'
                 #block id
                 img_name=time_stamp+'_'+'blockid_'+str(label)+'.jpg'
                 cv2.imwrite(os.path.join(savefile,img_name),fram)
@@ -228,7 +230,7 @@ class Cal_Interface(object):
                 print('Some thing wrong with the cam,time out!')
                 break
             if (f_counter>frame_num):
-                #print('get user picture ok!')
+                #print('get user picture ok,save picture:{}'.format(f_counter))
                 break
 
     def cameracheck(self):
@@ -255,7 +257,7 @@ class Cal_Interface(object):
                     break
             rt=time.time()-s_time
             #超时退出
-            if rt >60:
+            if rt >60*10:
                 print('camera check time out')
                 break
         cv2.destroyWindow('test')
@@ -292,14 +294,22 @@ class Cal_Interface(object):
         print('cam release!')
         cv2.destroyAllWindows()
         print('all windows destroy!')
-
+    def showpicnum(self):
+        '''
+        返回保存照片文件夹的图片地址
+        用来显示当前图片数量
+        :return:
+        '''
+        file_addr=self.save_filename
+        return os.listdir(file_addr)
     def starcalibrate(self):
         self.cameracheck()
         self.cal(self.caltime,wait_sec=self.wait_sec)
 
         self.getoutclean()
+        print('Picture number:{}'.format(len(self.showpicnum())))
 
 if __name__ == '__main__':
 
-    a=Cal_Interface(line_num=4,save_filename='calimg_file_val',wait_sec=1000,frame_num=200,time_gap=10)
+    a=Cal_Interface(line_num=4,save_filename=r'D:\Proj_DL\Code\Proj_EyeTraker\Proj_iTraker\Transfer_iTraker\img4X4_val',wait_sec=1000,frame_num=1,time_gap=200)
     a.starcalibrate()
