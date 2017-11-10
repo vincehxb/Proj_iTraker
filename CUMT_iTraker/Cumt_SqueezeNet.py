@@ -1,10 +1,15 @@
 '''
-    2017年11月8日10:14:24
-        说明：
+    更新：
+        2017年11月10日16:50:17
+            1.更新提取权值函数：init_network(weight_addr)
+            2.更新保存权值函数：save_network_weight(filename)
+
+    说明：
+        2017年11月8日10:14:24
             利用SqueezeNet思想来重构CUMT结构，原CUMT网络参数大小为 5.26Mb(conv:0.57Mb,fc:4.68Mb)
             改进后的squeezenet的参数大小（conv:2.53Mb,fc:0Mb)
 
-        网络结构：
+            网络结构：
             输入：（128,128,3）
 
             head:(N,128,128,3)->(N,64,64,64)
@@ -27,9 +32,9 @@
 '''
 import tensorflow as tf
 import numpy as np
-
+import pickle
 class squeezenet():
-    def __init__(self,images,sess,lr=1e-3,imageshape=[128,128,3]):
+    def __init__(self,images,sess,lr=1e-3,imageshape=[128,128,3],outputclass=10):
         '''
         初始化：建立计算图
         :param images:
@@ -39,6 +44,7 @@ class squeezenet():
         '''
         self.sess=sess
         print('building graph')
+        self.outputclass=outputclass
         self._buildgraph(images)
 
     def _buildgraph(self,x,dropout_rate=0.5):
@@ -77,10 +83,10 @@ class squeezenet():
 
         with tf.variable_scope('tail'):
             x_pool10=tf.nn.dropout(x_pool10,dropout_rate)
-            conv_tail=self._convlayer(x_pool10,'conv',[1,1,512,10])                                                     # (N,8,8,512)->(N,8,8,10)
+            conv_tail=self._convlayer(x_pool10,'conv',[1,1,512,self.outputclass])                                       # (N,8,8,512)->(N,8,8,10)
             conv_tail=tf.nn.relu(conv_tail)
             avg_pool=self._poollayer(conv_tail,pooling='avg',size=(8,8),stride=(1,1),padding='VALID')                   # (N,8,8,10)->(N,1,1,10)
-            score=tf.squeeze(avg_pool,[1,2])                                                                           #(N,10)
+            score=tf.squeeze(avg_pool,[1,2])                                                                            #(N,10)
         #return score
         self.score=score
 
@@ -142,6 +148,55 @@ class squeezenet():
             x = tf.nn.max_pool(input, ksize=(1, size[0], size[1], 1), strides=(1, stride[0], stride[1], 1),
                            padding=padding)
         return x
+
+    def init_network(self,weight_addr='squeezenet_795.pkl'):
+        '''
+        利用保存好的权值文件来初始化网络
+        ！！注意假如需要调用这个函数，一定不可以在调用这个函数后在对全部变量进行初始化 （sess.run(init)）！！
+        这样会使得加载的权值被覆盖，要先进行全局变量初始化再读取权值文件！
+        :param weight_addr:权值文件
+        :return:
+        '''
+        #初始化全部变量
+        sess=self.sess
+        init=tf.global_variables_initializer()
+        sess.run(init)
+        #加载权值文件，写入网络
+        print('loading weight file:{}'.format(weight_addr))
+        network_dict=np.load(weight_addr)
+        layer_name=list(network_dict.keys())
+        for name_ in layer_name:
+            with tf.variable_scope('',reuse=True):
+                var=tf.get_variable(name_)
+                sess.run(var.assign(network_dict[name_]))
+        print('network init done!')
+
+    def save_network_weight(self,filename):
+        '''
+        提取网络的权值，并保存到文件
+        :param filename: 文件名
+        :return:
+        '''
+        sess=self.sess
+        print('extracting network weight to file:{}'.format(filename))
+        all_var_name=list(tf.trainable_variables())
+        weight_dict={}
+        #提取变量值
+        for name_ in all_var_name:
+            #变量名称
+            layer_name=str(name_).split("'")[1][:-2]
+            print(layer_name)
+            with tf.variable_scope('',reuse=True):
+                var=tf.get_variable(layer_name)
+                #注意var是tensor，需要转换一下
+                weight_dict[layer_name]=sess.run(var)
+        #保存到pkl文件中
+        fp=open(filename,'wb')
+        pickle.dump(obj=weight_dict,file=fp)
+        fp.close()
+        print('save weight file done!')
+
+
 
 
 
