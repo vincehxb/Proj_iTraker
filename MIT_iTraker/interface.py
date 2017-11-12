@@ -102,7 +102,7 @@ class Cal_Interface(object):
             cv2.line(img_,(0,h_*i),(w,h_*i),line_color,line_w)
 
 
-    def drawblock(self,img,block_id=0,blockcolor=(0,218,0),blockwideth=5):
+    def drawblock(self,img,block_id=0,blockcolor=(46,218,255),blockwideth=5):
         '''
         选定九宫格，在这个格子上填充矩形表示选定这个格子
         :param img_: 图片
@@ -111,7 +111,7 @@ class Cal_Interface(object):
         :param blockwideth: 框的宽度
         :return:
         '''
-        blockcolor=(218,218,218)
+        #blockcolor=(218,218,218)
         h,w=img.shape[0],img.shape[1]
         w_line,h_line=self.line_num,self.line_num
         h_,w_=h//h_line,w//w_line
@@ -175,7 +175,7 @@ class Cal_Interface(object):
 
         #创建乱序的block id
         block_index=np.arange(self.line_num*self.line_num)
-        np.random.shuffle(block_index)
+        #np.random.shuffle(block_index)
 
         #设置window 为全屏
         cv2.namedWindow('Calibrate',cv2.WINDOW_NORMAL)
@@ -184,13 +184,13 @@ class Cal_Interface(object):
         #随机显示某个位置的方格，设置1 s后保存得到的图像
 
         for index_ in block_index:
-
+            print(index_)
             img_=cv2.imread('test.jpg')
             self.drawline(img_=img_,wandh_num=self.line_num,line_color=(255,255,255))
             self.drawblock(img=img_,block_id=index_,blockcolor=self.blockcolor)
             cv2.imshow('Calibrate',img_)
-            #等待 1s 后保存图像
-            if (cv2.waitKey(wait_sec) & 0xff==27):
+            #等待 1s 后保存图像 wait_sec
+            if (cv2.waitKey() & 0xff==27):
                 print('Exit Calibrate!')
                 break
             #保存用户图像
@@ -212,9 +212,6 @@ class Cal_Interface(object):
         s_time=time.time()
         f_counter=0
         time_gap=self.time_gap
-        #创建保存图片的文件夹
-        if not os.path.exists(savefile):
-            os.mkdir(savefile)
         #捕捉帧
         while (True):
             ret,fram=cap.read()
@@ -309,7 +306,10 @@ class Cal_Interface(object):
         self.getoutclean()
         print('Picture number:{}'.format(len(self.showpicnum())))
 
+    def program_check(self):
+        pass
+
 if __name__ == '__main__':
 
-    a=Cal_Interface(line_num=4,save_filename=r'D:\Proj_DL\Code\Proj_EyeTraker\Proj_iTraker\Transfer_iTraker\img4X4_val',wait_sec=1000,frame_num=1,time_gap=200)
+    a=Cal_Interface(line_num=4,save_filename=r'D:\Proj_DL\Code\Proj_EyeTraker\Proj_iTraker\CUMT_iTraker\img4x4',wait_sec=1000,frame_num=1,time_gap=200)
     a.starcalibrate()

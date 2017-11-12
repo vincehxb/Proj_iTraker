@@ -301,5 +301,5 @@ class Cal_Interface(object):
 
 if __name__ == '__main__':
 
-    a=Cal_Interface(line_num=4,save_filename='calimg_file_val',wait_sec=1000,frame_num=200,time_gap=10)
+    a=Cal_Interface(line_num=4,save_filename=r'D:\Proj_DL\Code\Proj_EyeTraker\Proj_iTraker\CUMT_iTraker\img4x4',wait_sec=1000,frame_num=200,time_gap=10)
     a.starcalibrate()
