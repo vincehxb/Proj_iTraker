@@ -102,7 +102,7 @@ class Cal_Interface(object):
             cv2.line(img_,(0,h_*i),(w,h_*i),line_color,line_w)
 
 
-    def drawblock(self,img,block_id=0,blockcolor=(46,218,255),blockwideth=5):
+    def drawblock(self,img,block_id=0,blockcolor=(128,128,128),blockwideth=5):
         '''
         选定九宫格，在这个格子上填充矩形表示选定这个格子
         :param img_: 图片
@@ -311,5 +311,5 @@ class Cal_Interface(object):
 
 if __name__ == '__main__':
 
-    a=Cal_Interface(line_num=4,save_filename=r'D:\Proj_DL\Code\Proj_EyeTraker\Proj_iTraker\CUMT_iTraker\img4x4',wait_sec=1000,frame_num=1,time_gap=200)
+    a=Cal_Interface(line_num=6,save_filename=r'D:\Proj_DL\Code\Proj_EyeTraker\Proj_iTraker\CUMT_iTraker\img6x6',wait_sec=1000,frame_num=1,time_gap=200)
     a.starcalibrate()

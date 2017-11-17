@@ -142,7 +142,7 @@ class squeezenet():
         '''
         with tf.variable_scope(name):
             w=tf.get_variable('weight',shape=shape,initializer=tf.contrib.layers.xavier_initializer())
-            b=tf.get_variable('biases',shape=shape[-1:],initializer=tf.zeros_initializer())
+            b=tf.get_variable('biases',shape=shape[-1:],initializer=tf.constant_initializer(0.01))
             conv_=tf.nn.conv2d(x,w,[1,1,1,1],padding=padding)
             conv_=tf.nn.bias_add(conv_,b)
             return conv_
@@ -284,6 +284,6 @@ class squeezenet():
         if pre_process:
             eye_img=cv2.resize(eye_img,(128,128))[:,:,::-1].reshape((1,128,128,3))
         return  eye_img
-        
+
 
 

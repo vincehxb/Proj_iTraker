@@ -18,6 +18,7 @@ CUMT_iTraker/.ipynb_checkpoints/*
 *.jpg
 CUMT_iTraker/model_save/*
 CUMT_iTraker/mylog/*
+CUMT_iTraker/mylog_1115/*
 *.mp4
 MIT_iTraker/Capture001.png
 *.png
