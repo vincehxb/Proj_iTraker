@@ -38,7 +38,7 @@ class bisic_cnn(object):
                                padding=padding)
         return x
 
-    def _convblock(self,x,name,shape,bn_istraing,padding='VALID',stride=[1,1]):
+    def _convblock(self,x,name,shape,bn_istraing,padding='VALID',stride=[1,1],mode='bn_relu_conv'):
         '''
         标准的：CONV->BN -> RELU
         三个函数结合
@@ -50,18 +50,31 @@ class bisic_cnn(object):
         :param padding:
         :return:
         '''
+
         with tf.variable_scope(name):
             #conv
             with tf.name_scope('weight_biases'):
                 w=tf.get_variable('weight',shape=shape,initializer=tf.contrib.layers.xavier_initializer())
                 b=tf.get_variable('biases',shape=shape[-1:],initializer=tf.constant_initializer(0.01))
-            conv_=tf.nn.conv2d(x,w,[1,stride[0],stride[1],1],padding=padding,name='conv')
-            conv_=tf.nn.bias_add(conv_,b,name='bias_add')
-            #BN
-            bn_=tf.layers.batch_normalization(conv_,training=bn_istraing,name='BN')
-            #relu
-            relu_=tf.nn.relu(bn_,name='relu')
-            return relu_
+            if mode == 'conv_bn_relu':
+                conv_=tf.nn.conv2d(x,w,[1,stride[0],stride[1],1],padding=padding,name='conv')
+                conv_=tf.nn.bias_add(conv_,b,name='bias_add')
+                #BN
+                bn_=tf.layers.batch_normalization(conv_,training=bn_istraing,name='BN')
+                #relu
+                relu_=tf.nn.relu(bn_,name='relu')
+                return relu_
+            elif mode == 'bn_relu_conv':
+                #BN
+                bn_=tf.layers.batch_normalization(x,training=bn_istraing,name='BN')
+                #relu
+                relu_=tf.nn.relu(bn_,name='relu')
+                #conv
+                conv_=tf.nn.conv2d(relu_,w,[1,stride[0],stride[1],1],padding=padding,name='conv')
+                conv_=tf.nn.bias_add(conv_,b,name='bias_add')
+                return conv_
+            else:
+                raise ValueError('mode can only be conv_bn_relu or bn_relu_conv !!!')
 
     def save_network_weight(self,filename,sess):
         '''
@@ -110,3 +123,12 @@ class bisic_cnn(object):
                 var=tf.get_variable(name_)
                 sess.run(var.assign(network_dict[name_]))
         print('network init done!')
+    def get_l2loss(self):
+        '''
+        计算L2 LOSS,取所有可训练参数
+        :return:
+        '''
+        with tf.name_scope('Reg_Loss'):
+            l2_loss = tf.add_n(
+                [tf.nn.l2_loss(var) for var in tf.trainable_variables()])
+        return l2_loss

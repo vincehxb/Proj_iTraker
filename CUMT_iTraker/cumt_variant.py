@@ -2,12 +2,14 @@ import tensorflow as tf
 from cnn_basic import bisic_cnn
 
 class densenet(bisic_cnn):
-    def __init__(self,Images,theta,K,L,bn_istraining,sess,output_class=10):
+    def __init__(self,Images,dropout,theta,K,L,bn_istraining,sess,denseblock_num,output_class=10):
         self.theta=theta
         self.K=K
         self.L=L
         self.bn_istraining=bn_istraining
         self.output_class=output_class
+        self.denseblock_num=denseblock_num
+        self.dropout=dropout
         print('Building DenseNet....')
         self._build_densenet(Images)
 
@@ -36,13 +38,13 @@ class densenet(bisic_cnn):
         #(N,H,W,3) -> (N,H/2,W/2,2*K)
         #(N,128,128,3) -> (N,64,64,24)
         with tf.variable_scope('Head'):
-            conv1_=self._convblock(x=X,name='conv1_3X3',shape=[3,3,3,K],bn_istraing=bn_istraining,padding='SAME',stride=[1,1])
-            conv2_=self._convblock(x=conv1_,name='conv2_3X3',shape=[3,3,K,2*K],bn_istraing=bn_istraining,padding='SAME',stride=[1,1])
+            # conv1_=self._convblock(x=X,name='conv1_3X3',shape=[3,3,3,K],bn_istraing=bn_istraining,padding='SAME',stride=[1,1])
+            conv2_=self._convblock(x=X,name='conv2_3X3',shape=[3,3,3,2*K],bn_istraing=bn_istraining,padding='SAME',stride=[1,1],mode='conv_bn_relu')
             pool1_=self._poollayer(input_x=conv2_,pooling='max',size=(3,3),stride=(2,2),padding='SAME')
         print(pool1_.get_shape())
         with tf.variable_scope('DenseConect'):
             dense_input=pool1_
-            for block_id in range(4):
+            for block_id in range(self.denseblock_num):
                 block_name_dense='denseblock'+'_'+str(block_id+1)
                 block_name_trans='transblock'+'_'+str(block_id+1)
                 trans_input=self.dense_block(input_x=dense_input,name=block_name_dense,growth_tate=K,L=L)
@@ -51,9 +53,11 @@ class densenet(bisic_cnn):
                 print(dense_input.get_shape())
         with tf.variable_scope('Tail'):
             #(N,4,4,57) ->(N,4,4,10)
-            conv_class_=self._convblock(x=dense_input,name='conv_class',shape=[1,1,57,self.output_class],bn_istraing=bn_istraining,padding='VALID',stride=[1,1])
+            dense_input=tf.nn.dropout(dense_input,self.dropout,name='drop_1')
+            conv_class_=self._convblock(x=dense_input,name='conv_class',shape=[1,1,int(dense_input.get_shape()[-1]),self.output_class],bn_istraing=bn_istraining,padding='VALID',stride=[1,1])
             #(N,4,4,10) ->(N,1,1,10)
-            avg_pool_=self._poollayer(input_x=conv_class_,pooling='avg',size=(4,4),stride=(1,1),padding='VALID')
+            conv_class_=tf.nn.dropout(conv_class_,self.dropout,name='drop_1')
+            avg_pool_=self._poollayer(input_x=conv_class_,pooling='avg',size=(int(conv_class_.get_shape()[1]),int(conv_class_.get_shape()[2])),stride=(1,1),padding='VALID')
             y_score=tf.squeeze(avg_pool_,[1,2],name='squeeze')
             #softmax_=tf.nn.softmax(softmax_,name='softmax')
         self.y_score=y_score
