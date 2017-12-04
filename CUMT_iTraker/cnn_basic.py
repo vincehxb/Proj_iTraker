@@ -1,9 +1,25 @@
+'''
+    说明：
+        2017年11月21日15:35:26
+        cnn的常用模块，建立新的模型的时候可以继承这个类，省去许多基础的函数定义
+            --   _convlayer()               :实现卷积
+            --  _poollayer()                :实现池化
+            --  _convblock()                :bn+relu+conv的组合操作
+            --  save_network_weight()       :提取网络中所有的可训练函数，保存为pkl文件
+            --  init_network()              :利用pkl文件初始化网络中所有的可训练参数
+            --  get_l2loss()                :计算所有可训练参数的l2 norm,累加后返回这个值
+            --  count_trainable_params()    :统计所有可训练参数数量，占的存储空间
+
+
+
+'''
 import tensorflow as tf
 import numpy as np
 
 class bisic_cnn(object):
     def __init__(self,sess):
-       pass
+        print('cnn basic module inherit!')
+
     def _convlayer(self,x,name,shape,padding='VALID',stride=[1,1]):
         '''
         conv函数
@@ -20,6 +36,7 @@ class bisic_cnn(object):
             conv_=tf.nn.conv2d(x,w,[1,stride[0],stride[1],1],padding=padding,name='conv')
             conv_=tf.nn.bias_add(conv_,b,name='bias_add')
             return conv_
+
     def _poollayer(self, input_x, pooling='max',size=(3, 3), stride=(2, 2), padding='SAME'):
         '''
         pool函数
@@ -38,7 +55,7 @@ class bisic_cnn(object):
                                padding=padding)
         return x
 
-    def _convblock(self,x,name,shape,bn_istraing,padding='VALID',stride=[1,1],mode='bn_relu_conv'):
+    def _convblock(self,x,name,shape,bn_istraing,padding='VALID',stride=[1,1],mode='conv_bn_relu'):
         '''
         标准的：CONV->BN -> RELU
         三个函数结合
@@ -48,9 +65,10 @@ class bisic_cnn(object):
         :param bn_istraing:是否是在训练
         :param stride:卷积的h,w的步长
         :param padding:
+        :param mode: bn ->relu->conv 顺序（'bn_relu_conv'）或者是 conv-> bn-> relu 顺序（'conv_bn_relu'）
         :return:
         '''
-
+        block_output=None
         with tf.variable_scope(name):
             #conv
             with tf.name_scope('weight_biases'):
@@ -62,8 +80,7 @@ class bisic_cnn(object):
                 #BN
                 bn_=tf.layers.batch_normalization(conv_,training=bn_istraing,name='BN')
                 #relu
-                relu_=tf.nn.relu(bn_,name='relu')
-                return relu_
+                block_output=tf.nn.relu(bn_,name='relu')
             elif mode == 'bn_relu_conv':
                 #BN
                 bn_=tf.layers.batch_normalization(x,training=bn_istraing,name='BN')
@@ -71,10 +88,10 @@ class bisic_cnn(object):
                 relu_=tf.nn.relu(bn_,name='relu')
                 #conv
                 conv_=tf.nn.conv2d(relu_,w,[1,stride[0],stride[1],1],padding=padding,name='conv')
-                conv_=tf.nn.bias_add(conv_,b,name='bias_add')
-                return conv_
+                block_output=tf.nn.bias_add(conv_,b,name='bias_add')
             else:
                 raise ValueError('mode can only be conv_bn_relu or bn_relu_conv !!!')
+        return block_output
 
     def save_network_weight(self,filename,sess):
         '''
@@ -100,11 +117,13 @@ class bisic_cnn(object):
         pickle.dump(obj=weight_dict,file=fp)
         fp.close()
         print('save weight file done!')
+
     def init_network(self,weight_addr,sess,skip_layer=[]):
         '''
         利用保存好的权值文件来初始化网络
         ！！注意假如需要调用这个函数，一定不可以在调用这个函数后在对全部变量进行初始化 （sess.run(init)）！！
         这样会使得加载的权值被覆盖，要先进行全局变量初始化再读取权值文件！
+        ！！当网络中有BN的时候，其一些参数不会被保存，所以除非是迁移学习，否则不要使用这个函数来保存模型
         :param weight_addr:权值文件
         :return:
         '''
@@ -132,3 +151,17 @@ class bisic_cnn(object):
             l2_loss = tf.add_n(
                 [tf.nn.l2_loss(var) for var in tf.trainable_variables()])
         return l2_loss
+
+    def count_trainable_params(self):
+        '''
+        统计所有可训练参数
+        :return:
+        '''
+        total_parameters = 0
+        for variable in tf.trainable_variables():
+            shape = variable.get_shape()
+            variable_parametes = 1
+            for dim in shape:
+                variable_parametes *= dim.value
+            total_parameters += variable_parametes
+        print("Total training params: %.5f Million,%.5f Mb" % (total_parameters / 1e6,total_parameters* 4/ (1024*1024)))

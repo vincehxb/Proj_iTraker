@@ -44,7 +44,9 @@ import tensorflow as tf
 import numpy as np
 import pickle
 import cv2
-class squeezenet():
+from cnn_basic import bisic_cnn
+
+class squeezenet(bisic_cnn):
     def __init__(self,images,sess,lr=1e-3,imageshape=[128,128,3],outputclass=10):
         '''
         初始化：建立计算图

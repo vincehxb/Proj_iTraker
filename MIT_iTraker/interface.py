@@ -123,45 +123,16 @@ class Cal_Interface(object):
         img[sy:sy+h_,sx:sx+w_,:]=blockcolor
         #在矩形中心画一个小圆辅助
         roi_=img[sy:sy+h_,sx:sx+w_]
-        cv2.circle(roi_,(roi_.shape[1]//2,roi_.shape[0]//2), 50, (0,0,0), -1)
+        random_w=np.random.choice(range(20,w_-20),1)[0]
+        random_h=np.random.choice(range(20,h_-20),1)[0]
+        # cv2.circle(roi_,(roi_.shape[1]//2,roi_.shape[0]//2), 50, (0,0,0), -1)
+        cv2.circle(roi_,(random_w,random_h), 20, (0,0,0), -1)
 
         #只是在矩形边缘画框
         #cv2.rectangle(img_,(sx,sy),(sx+w_,sy+h_),blockcolor,blockwideth)
         return img
 
-    # def cal(self,cal_times,wait_sec=1000):
-    #     '''
-    #     校准函数，随机显示若干个方格，捕获用户的图片，保存下来
-    #     按 Esc 退出
-    #     :param cal_times: 显示的方格个数
-    #     :param wait_sec: 每个方格出现的时间间隙
-    #     :return:
-    #     '''
-    #
-    #     #创建随机坐标
-    #     x_index=np.random.choice(range(self.line_num),cal_times)
-    #     y_index=np.random.choice(range(self.line_num),cal_times)
-    #     index=zip(list(x_index),list(y_index))
-    #
-    #     #设置window 为全屏
-    #     cv2.namedWindow('Calibrate',cv2.WINDOW_NORMAL)
-    #     cv2.setWindowProperty('Calibrate', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-    #
-    #     #随机显示某个位置的方格，设置1 s后保存得到的图像
-    #
-    #     for index_ in index:
-    #         img_=np.ones(self.img_res,np.uint8)*128
-    #         self.drawline(img_=img_,wandh_num=self.line_num,line_color=(255,255,255))
-    #         self.drawblock(img=img_,block_id=index_,blockcolor=self.blockcolor)
-    #         cv2.imshow('Calibrate',img_)
-    #         #等待 1s 后保存图像
-    #         if (cv2.waitKey(wait_sec) & 0xff==27):
-    #             print('Exit Calibrate!')
-    #             break
-    #         #保存用户图像
-    #         self.GetUserImage(savefile='calimg_file',label=index_)
-    #     cv2.destroyWindow('Calibrate')
-    #     print('Get Calibrate Image Done!')
+
     def cal(self,cal_times,wait_sec=1000):
         '''
         校准函数，随机显示若干个方格，捕获用户的图片，保存下来
@@ -194,11 +165,11 @@ class Cal_Interface(object):
                 print('Exit Calibrate!')
                 break
             #保存用户图像
-            self.GetUserImage(savefile=self.save_filename,label=index_,frame_num=self.framenum)
+            self.GetUserImage(savefile=self.save_filename,label=index_,frame_num=self.framenum,block_index=index_)
         cv2.destroyWindow('Calibrate')
         print('Get Calibrate Image Done!')
 
-    def GetUserImage(self,label=None,savefile='calimg_file',frame_num=10):
+    def GetUserImage(self,block_index,label=None,savefile='calimg_file',frame_num=10):
         '''
         获取用户图像并且保存
         一次调用 存储frame_num张图片，每张图片之间的时间间隙为frame_gap
@@ -214,6 +185,11 @@ class Cal_Interface(object):
         time_gap=self.time_gap
         #捕捉帧
         while (True):
+            img_=cv2.imread('test.jpg')
+            self.drawline(img_=img_,wandh_num=self.line_num,line_color=(255,255,255))
+            self.drawblock(img=img_,block_id=block_index,blockcolor=self.blockcolor)
+            cv2.imshow('Calibrate',img_)
+            cv2.waitKey(time_gap)
             ret,fram=cap.read()
             if ret:
                 f_counter+=1
@@ -221,7 +197,7 @@ class Cal_Interface(object):
                 #block id
                 img_name=time_stamp+'_'+'blockid_'+str(label)+'.jpg'
                 cv2.imwrite(os.path.join(savefile,img_name),fram)
-                cv2.waitKey(time_gap)
+
             #30秒 超时退出
             if (time.time()-s_time>30):
                 print('Some thing wrong with the cam,time out!')
@@ -311,5 +287,5 @@ class Cal_Interface(object):
 
 if __name__ == '__main__':
 
-    a=Cal_Interface(line_num=6,save_filename=r'D:\Proj_DL\Code\Proj_EyeTraker\Proj_iTraker\CUMT_iTraker\img6x6',wait_sec=1000,frame_num=1,time_gap=200)
+    a=Cal_Interface(line_num=6,save_filename=r'D:\Proj_DL\Code\Proj_EyeTraker\Proj_iTraker\CUMT_iTraker\img6x6',wait_sec=1000,frame_num=20,time_gap=300)
     a.starcalibrate()
